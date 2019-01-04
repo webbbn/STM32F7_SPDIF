@@ -131,3 +131,38 @@ org.eclipse.core.internal.resources.ResourceException: The project description f
 
 !ENTRY org.eclipse.cdt.core 1 0 2019-01-04 09:43:41.911
 !MESSAGE Indexed 'SPDIF_to_usb' (33 sources, 98 headers) in 3.75 sec: 7,465 declarations; 39,766 references; 0 unresolved inclusions; 1 syntax errors; 0 unresolved names (0%)
+
+!ENTRY org.eclipse.core.jobs 4 2 2019-01-04 09:58:37.488
+!MESSAGE An internal error occurred during: "LabelEventJob".
+!STACK 0
+org.eclipse.swt.SWTException: Device is disposed
+	at org.eclipse.swt.SWT.error(SWT.java:4533)
+	at org.eclipse.swt.SWT.error(SWT.java:4448)
+	at org.eclipse.swt.SWT.error(SWT.java:4419)
+	at org.eclipse.swt.widgets.Display.error(Display.java:1262)
+	at org.eclipse.swt.widgets.Display.asyncExec(Display.java:710)
+	at org.eclipse.egit.ui.internal.decorators.GitLightweightDecorator.fireLabelEvent(GitLightweightDecorator.java:727)
+	at org.eclipse.egit.ui.internal.decorators.LabelEventJob.run(GitLightweightDecorator.java:797)
+	at org.eclipse.core.internal.jobs.Worker.run(Worker.java:55)
+!SESSION 2019-01-04 09:58:39.062 -----------------------------------------------
+eclipse.buildId=4.6.3.M20170301-0400
+java.version=1.8.0_191
+java.vendor=Oracle Corporation
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=en_US
+Framework arguments:  -pluginCustomization configuration/st_pref.ini -product org.eclipse.epp.package.cpp.product file:/C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_streaming/SW4STM32/SPDIF_streaming/.cproject
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 -pluginCustomization configuration/st_pref.ini -product org.eclipse.epp.package.cpp.product file:/C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_streaming/SW4STM32/SPDIF_streaming/.cproject
+
+!ENTRY fr.ac6.mcu.ide 1 1 2019-01-04 09:58:52.972
+!MESSAGE Started RMI Server, listening on port 21112
+
+!ENTRY org.eclipse.cdt.core 1 0 2019-01-04 09:58:59.024
+!MESSAGE Indexed 'SPDIF_streaming' (33 sources, 88 headers) in 4.25 sec: 7,133 declarations; 39,295 references; 8 unresolved inclusions; 1 syntax errors; 14 unresolved names (0.03%)
+
+!ENTRY org.eclipse.launchbar.core 2 0 2019-01-04 10:00:57.256
+!MESSAGE Enablement expression is missing for descriptor type org.eclipse.cdt.debug.core.coreBuildDescriptorType
+
+!ENTRY org.eclipse.launchbar.core 2 0 2019-01-04 10:00:57.260
+!MESSAGE Enablement expression is missing for config provider for org.eclipse.cdt.debug.core.coreBuildDescriptorType
+
+!ENTRY fr.ac6.mcu.debug 4 0 2019-01-04 10:00:57.387
+!MESSAGE Project no longer exists
