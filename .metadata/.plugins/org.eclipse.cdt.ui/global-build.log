@@ -1,0 +1,23 @@
+09:07:37 **** Incremental Build of configuration Debug for project SPDIF_to_usb ****
+make all 
+Building file: C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_to_usb/Src/main.c
+Invoking: MCU GCC Compiler
+C:\Users\webbb\projects\STM32F7_SPDIF\SPDIF_to_usb\SW4STM32\SPDIF_to_usb\Debug
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 '-D__weak=__attribute__((weak))' '-D__packed=__attribute__((__packed__))' -DUSE_HAL_DRIVER -DSTM32F746xx -I"C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_to_usb/Inc" -I"C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_to_usb/Drivers/STM32F7xx_HAL_Driver/Inc" -I"C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_to_usb/Drivers/STM32F7xx_HAL_Driver/Inc/Legacy" -I"C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_to_usb/Middlewares/ST/STM32_USB_Device_Library/Core/Inc" -I"C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_to_usb/Middlewares/ST/STM32_USB_Device_Library/Class/CDC/Inc" -I"C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_to_usb/Drivers/CMSIS/Device/ST/STM32F7xx/Include" -I"C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_to_usb/Drivers/CMSIS/Include"  -Og -g3 -Wall -fmessage-length=0 -ffunction-sections -c -fmessage-length=0 -MMD -MP -MF"Application/User/main.d" -MT"Application/User/main.o" -o "Application/User/main.o" "C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_to_usb/Src/main.c"
+Finished building: C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_to_usb/Src/main.c
+ 
+Building target: SPDIF_to_usb.elf
+Invoking: MCU GCC Linker
+arm-none-eabi-gcc -mcpu=cortex-m7 -mthumb -mfloat-abi=hard -mfpu=fpv5-sp-d16 -specs=nosys.specs -specs=nano.specs -T"../STM32F746NGHx_FLASH.ld" -Wl,-Map=output.map -Wl,--gc-sections -o "SPDIF_to_usb.elf" @"objects.list"   -lm
+Finished building target: SPDIF_to_usb.elf
+ 
+make --no-print-directory post-build
+Generating hex and Printing size information:
+arm-none-eabi-objcopy -O ihex "SPDIF_to_usb.elf" "SPDIF_to_usb.hex"
+arm-none-eabi-size "SPDIF_to_usb.elf"
+   text	   data	    bss	    dec	    hex	filename
+  21752	    476	  39324	  61552	   f070	SPDIF_to_usb.elf
+ 
+09:07:55 **** Incremental Build of configuration Debug for project SPDIF_to_usb ****
+make all 
+make: Nothing to be done for 'all'.
