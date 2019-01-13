@@ -127,6 +127,12 @@ uint8_t UserRxBufferFS[APP_RX_DATA_SIZE];
 uint8_t UserTxBufferFS[APP_TX_DATA_SIZE];
 
 /* USER CODE BEGIN PRIVATE_VARIABLES */
+USBD_CDC_LineCodingTypeDef linecoding = {
+					 2000000, /* baud rate*/
+					 0x00,   /* stop bits-1*/
+					 0x00,   /* parity - none*/
+					 0x08    /* nb. of bits 8*/
+};
 
 /* USER CODE END PRIVATE_VARIABLES */
 
@@ -211,58 +217,68 @@ static int8_t CDC_DeInit_FS(void)
 static int8_t CDC_Control_FS(uint8_t cmd, uint8_t* pbuf, uint16_t length)
 {
   /* USER CODE BEGIN 5 */
-  switch(cmd)
-  {
-    case CDC_SEND_ENCAPSULATED_COMMAND:
+  switch(cmd) {
+  case CDC_SEND_ENCAPSULATED_COMMAND:
 
     break;
 
-    case CDC_GET_ENCAPSULATED_RESPONSE:
+  case CDC_GET_ENCAPSULATED_RESPONSE:
 
     break;
 
-    case CDC_SET_COMM_FEATURE:
+  case CDC_SET_COMM_FEATURE:
 
     break;
 
-    case CDC_GET_COMM_FEATURE:
+  case CDC_GET_COMM_FEATURE:
 
     break;
 
-    case CDC_CLEAR_COMM_FEATURE:
+  case CDC_CLEAR_COMM_FEATURE:
 
     break;
 
-  /*******************************************************************************/
-  /* Line Coding Structure                                                       */
-  /*-----------------------------------------------------------------------------*/
-  /* Offset | Field       | Size | Value  | Description                          */
-  /* 0      | dwDTERate   |   4  | Number |Data terminal rate, in bits per second*/
-  /* 4      | bCharFormat |   1  | Number | Stop bits                            */
-  /*                                        0 - 1 Stop bit                       */
-  /*                                        1 - 1.5 Stop bits                    */
-  /*                                        2 - 2 Stop bits                      */
-  /* 5      | bParityType |  1   | Number | Parity                               */
-  /*                                        0 - None                             */
-  /*                                        1 - Odd                              */
-  /*                                        2 - Even                             */
-  /*                                        3 - Mark                             */
-  /*                                        4 - Space                            */
-  /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
-  /*******************************************************************************/
-    case CDC_SET_LINE_CODING:
+    /*******************************************************************************/
+    /* Line Coding Structure                                                       */
+    /*-----------------------------------------------------------------------------*/
+    /* Offset | Field       | Size | Value  | Description                          */
+    /* 0      | dwDTERate   |   4  | Number |Data terminal rate, in bits per second*/
+    /* 4      | bCharFormat |   1  | Number | Stop bits                            */
+    /*                                        0 - 1 Stop bit                       */
+    /*                                        1 - 1.5 Stop bits                    */
+    /*                                        2 - 2 Stop bits                      */
+    /* 5      | bParityType |  1   | Number | Parity                               */
+    /*                                        0 - None                             */
+    /*                                        1 - Odd                              */
+    /*                                        2 - Even                             */
+    /*                                        3 - Mark                             */
+    /*                                        4 - Space                            */
+    /* 6      | bDataBits  |   1   | Number Data bits (5, 6, 7, 8 or 16).          */
+    /*******************************************************************************/
+  case CDC_SET_LINE_CODING:
+    linecoding.bitrate    = (uint32_t)(pbuf[0] | (pbuf[1] << 8) |	\
+				       (pbuf[2] << 16) | (pbuf[3] << 24));
+    linecoding.format     = pbuf[4];
+    linecoding.paritytype = pbuf[5];
+    linecoding.datatype   = pbuf[6];
+
+    /* Add your code here */
+    break;
+
+  case CDC_GET_LINE_CODING:
+    pbuf[0] = (uint8_t)(linecoding.bitrate & 0xff);
+    pbuf[1] = (uint8_t)((linecoding.bitrate >> 8) & 0xff);
+    pbuf[2] = (uint8_t)((linecoding.bitrate >> 16) & 0xff);
+    pbuf[3] = (uint8_t)((linecoding.bitrate >> 24) & 0xff);
+    pbuf[4] = linecoding.format;
+    pbuf[5] = linecoding.paritytype;
+    pbuf[6] = linecoding.datatype;     
+
+  case CDC_SET_CONTROL_LINE_STATE:
 
     break;
 
-    case CDC_GET_LINE_CODING:
-
-    break;
-
-    case CDC_SET_CONTROL_LINE_STATE:
-
-    break;
-
-    case CDC_SEND_BREAK:
+  case CDC_SEND_BREAK:
 
     break;
 

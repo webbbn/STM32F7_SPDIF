@@ -65,9 +65,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-//check linker script for enough malloc space, here as 1-byte words!
-//but above 40 it does not work anymore !!!
-#define SPDIF_SAMPLE_NUM (192 * 2 * 40)
+#define SPDIF_SAMPLE_NUM (512 * 2)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -85,6 +83,7 @@ UART_HandleTypeDef huart1;
 uint32_t SPDIF_irq_count;
 //use malloc, pls. see _Min_Heap_Size  = 0x4000; in LinkerScript.ld
 static uint32_t *SPDIFIN0_RxBuf0 = NULL;
+static uint32_t *SPDIFIN0_RxBuf1 = NULL;
 static uint32_t ntrans = 0;
 /* USER CODE END PV */
 
@@ -142,6 +141,7 @@ int main(void)
   /* USER CODE BEGIN 2 */
   // Allocate the receive buffer
   SPDIFIN0_RxBuf0 = (uint32_t *)malloc(SPDIF_SAMPLE_NUM * 4);
+  SPDIFIN0_RxBuf1 = (uint32_t *)malloc(SPDIF_SAMPLE_NUM * 4);
   // Start the SPDIF dataflow
   while (HAL_SPDIFRX_ReceiveDataFlow_IT(&hspdif, SPDIFIN0_RxBuf0, SPDIF_SAMPLE_NUM) == HAL_BUSY) ;
   /* USER CODE END 2 */
@@ -155,9 +155,63 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
     // Print some debug to the debug console (UART1)
-    sprintf(buf, "Ntrans: %lu\n\r", ntrans);
-    HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 100);
-    HAL_Delay(1000);
+    //sprintf(buf, "Ntrans: %lu\n\r", ntrans);
+    //HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 100);
+    //HAL_Delay(1000);
+
+    while (hspdif.RxXferCount > 192) ;
+    uint8_t *ibuf = (uint8_t*)SPDIFIN0_RxBuf0;
+    uint8_t *obuf = (uint8_t*)SPDIFIN0_RxBuf1;
+    uint16_t nrec = hspdif.RxXferSize - hspdif.RxXferCount;
+    // Byteswap the 32 bit words
+    // Note: This should only be performed for DTS encoding
+    uint8_t tmp;
+    size_t i;
+    for (i = 0; i < nrec * 4; i += 4) {
+      obuf[i] = ibuf[i + 3];
+      obuf[i + 1] = ibuf[i + 2];
+      obuf[i + 2] = ibuf[i + 1];
+      obuf[i + 3] = ibuf[i];
+    }
+    __disable_irq();
+    nrec = hspdif.RxXferSize - hspdif.RxXferCount;
+    hspdif.RxXferCount = SPDIF_SAMPLE_NUM;
+    hspdif.pRxBuffPtr  = SPDIFIN0_RxBuf0;
+    __enable_irq();
+    for ( ; i < nrec * 4; i += 4) {
+      obuf[i] = ibuf[i + 3];
+      obuf[i + 1] = ibuf[i + 2];
+      obuf[i + 2] = ibuf[i + 1];
+      obuf[i + 3] = ibuf[i];
+    }
+    CDC_Transmit_FS(obuf, nrec * 4);
+    //sprintf(buf, "Tx\n\r");
+    //HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 100);
+#if 0
+    while (hspdif.RxXferCount > 192) ;
+    //sprintf(buf, "Tx\n\r");
+    //HAL_UART_Transmit(&huart1, (uint8_t*)buf, strlen(buf), 100);
+    uint8_t *cbuf = (uint8_t*)hspdif.pRxBuffPtr;
+    uint32_t *nbuf = (hspdif.pRxBuffPtr == SPDIFIN0_RxBuf0) ? SPDIFIN0_RxBuf1 : SPDIFIN0_RxBuf0;
+    uint16_t nrec;
+    __disable_irq();
+    nrec = hspdif.RxXferSize - hspdif.RxXferCount;
+    hspdif.RxXferCount = SPDIF_SAMPLE_NUM;
+    hspdif.pRxBuffPtr  = nbuf;
+    __enable_irq();
+    // Byteswap the 32 bit words
+    // Note: This should only be performed for DTS encoding
+    uint8_t tmp;
+    for (size_t i = 0; i < nrec * 4; i += 4) {
+      tmp = cbuf[i];
+      cbuf[i] = cbuf[i + 3];
+      cbuf[i + 3] = tmp;
+      tmp = cbuf[i + 1];
+      cbuf[i + 1] = cbuf[i + 2];
+      cbuf[i + 2] = tmp;
+    }
+    CDC_Transmit_FS(cbuf, nrec * 4);
+#endif
   }
   /* USER CODE END 3 */
 }
@@ -312,6 +366,7 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+#if 0
 /**
   * @brief Rx Transfer (Data flow) completed callbacks
   * @param hspdif SPDIFRX handle
@@ -320,21 +375,39 @@ static void MX_GPIO_Init(void)
 __weak void HAL_SPDIFRX_RxCpltCallback(SPDIFRX_HandleTypeDef *h) {
   uint16_t nrec = h->RxXferSize - h->RxXferCount;
   ntrans += nrec;
+#if 0
+  // Swap buffers and start a new transfer immediately.
+  uint8_t *cbuf = (uint8_t*)h->pRxBuffPtr;
+  uint32_t *nbuf = (h->pRxBuffPtr == SPDIFIN0_RxBuf0) ? SPDIFIN0_RxBuf1 : SPDIFIN0_RxBuf0;
+  while(HAL_SPDIFRX_ReceiveDataFlow_IT(h, nbuf, SPDIF_SAMPLE_NUM) == HAL_BUSY) ;
   // Byteswap the 32 bit words
   // Note: This should only be performed for DTS encoding
-  uint8_t *buf8 = (uint8_t*)SPDIFIN0_RxBuf0;
+  uint8_t tmp;
   for (size_t i = 0; i < nrec * 4; i += 4) {
-    uint8_t tmp = buf8[i];
-    buf8[i] = buf8[i + 3];
-    buf8[i + 3] = tmp;
-    tmp = buf8[i + 1];
-    buf8[i + 1] = buf8[i + 2];
-    buf8[i + 2] = tmp;
+    tmp = cbuf[i];
+    cbuf[i] = cbuf[i + 3];
+    cbuf[i + 3] = tmp;
+    tmp = cbuf[i + 1];
+    cbuf[i + 1] = cbuf[i + 2];
+    cbuf[i + 2] = tmp;
   }
-  CDC_Transmit_FS((uint8_t*)SPDIFIN0_RxBuf0, nrec * 4);
-  // Start receiving the next packet
-  HAL_SPDIFRX_ReceiveDataFlow_IT(h, SPDIFIN0_RxBuf0, SPDIF_SAMPLE_NUM);
+  CDC_Transmit_FS(cbuf, nrec * 4);
+#endif
+  // Swap buffers and start a new transfer immediately.
+  uint8_t *ibuf = (uint8_t*)SPDIFIN0_RxBuf0;
+  uint8_t *obuf = (uint8_t*)SPDIFIN0_RxBuf1;
+  // Byteswap the 32 bit words
+  // Note: This should only be performed for DTS encoding
+  for (size_t i = 0; i < nrec * 4; i += 4) {
+    obuf[i] = ibuf[i + 3];
+    obuf[i + 3] = ibuf[i];
+    obuf[i + 1] = ibuf[i + 2];
+    obuf[i + 2] = ibuf[i + 1];
+  }
+  while(HAL_SPDIFRX_ReceiveDataFlow_IT(h, SPDIFIN0_RxBuf0, SPDIF_SAMPLE_NUM) == HAL_BUSY) ;
+  CDC_Transmit_FS(obuf, nrec * 4);
 }
+#endif
 /* USER CODE END 4 */
 
 /**

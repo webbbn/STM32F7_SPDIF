@@ -166,3 +166,57 @@ Command-line arguments:  -os win32 -ws win32 -arch x86_64 -pluginCustomization c
 
 !ENTRY fr.ac6.mcu.debug 4 0 2019-01-04 10:00:57.387
 !MESSAGE Project no longer exists
+!SESSION 2019-01-05 10:49:31.615 -----------------------------------------------
+eclipse.buildId=4.6.3.M20170301-0400
+java.version=1.8.0_191
+java.vendor=Oracle Corporation
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=en_US
+Framework arguments:  -pluginCustomization configuration/st_pref.ini -product org.eclipse.epp.package.cpp.product
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 -pluginCustomization configuration/st_pref.ini -product org.eclipse.epp.package.cpp.product
+
+!ENTRY fr.ac6.mcu.ide 1 1 2019-01-05 10:49:47.053
+!MESSAGE Started RMI Server, listening on port 21112
+!SESSION 2019-01-05 10:54:08.927 -----------------------------------------------
+eclipse.buildId=4.6.3.M20170301-0400
+java.version=1.8.0_191
+java.vendor=Oracle Corporation
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=en_US
+Framework arguments:  -pluginCustomization configuration/st_pref.ini -product org.eclipse.epp.package.cpp.product file:/C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_streaming/SW4STM32/SPDIF_streaming/.cproject
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 -pluginCustomization configuration/st_pref.ini -product org.eclipse.epp.package.cpp.product file:/C:/Users/webbb/projects/STM32F7_SPDIF/SPDIF_streaming/SW4STM32/SPDIF_streaming/.cproject
+
+!ENTRY fr.ac6.mcu.ide 1 1 2019-01-05 10:54:22.321
+!MESSAGE Started RMI Server, listening on port 21112
+
+!ENTRY org.eclipse.cdt.core 1 0 2019-01-05 10:54:28.435
+!MESSAGE Indexed 'SPDIF_streaming' (33 sources, 41 headers) in 4.33 sec: 5,023 declarations; 31,860 references; 14 unresolved inclusions; 38 syntax errors; 4,399 unresolved names (11%)
+
+!ENTRY org.eclipse.launchbar.core 2 0 2019-01-05 10:57:55.676
+!MESSAGE Enablement expression is missing for descriptor type org.eclipse.cdt.debug.core.coreBuildDescriptorType
+
+!ENTRY org.eclipse.launchbar.core 2 0 2019-01-05 10:57:55.680
+!MESSAGE Enablement expression is missing for config provider for org.eclipse.cdt.debug.core.coreBuildDescriptorType
+
+!ENTRY fr.ac6.mcu.debug 4 0 2019-01-05 10:57:55.847
+!MESSAGE Project no longer exists
+
+!ENTRY fr.ac6.mcu.debug 4 0 2019-01-05 10:59:02.661
+!MESSAGE Project no longer exists
+!SESSION 2019-01-12 21:31:43.960 -----------------------------------------------
+eclipse.buildId=4.6.3.M20170301-0400
+java.version=1.8.0_191
+java.vendor=Oracle Corporation
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=en_US
+Framework arguments:  -pluginCustomization configuration/st_pref.ini -product org.eclipse.epp.package.cpp.product
+Command-line arguments:  -os win32 -ws win32 -arch x86_64 -pluginCustomization configuration/st_pref.ini -product org.eclipse.epp.package.cpp.product
+
+!ENTRY org.eclipse.core.resources 2 10035 2019-01-12 21:31:48.368
+!MESSAGE The workspace exited with unsaved changes in the previous session; refreshing workspace to recover changes.
+
+!ENTRY fr.ac6.mcu.ide 1 1 2019-01-12 21:32:02.493
+!MESSAGE Started RMI Server, listening on port 21112
+
+!ENTRY org.eclipse.launchbar.core 2 0 2019-01-12 21:34:01.570
+!MESSAGE Enablement expression is missing for descriptor type org.eclipse.cdt.debug.core.coreBuildDescriptorType
+
+!ENTRY org.eclipse.launchbar.core 2 0 2019-01-12 21:34:01.575
+!MESSAGE Enablement expression is missing for config provider for org.eclipse.cdt.debug.core.coreBuildDescriptorType
