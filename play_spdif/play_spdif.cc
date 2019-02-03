@@ -1,23 +1,29 @@
 
+#include <windows.h>
+#include <shellapi.h>
+
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 }
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_syswm.h>
 
 typedef float Sample;
 
 static Uint32 SDL_AUDIO_TRANSPARENTLY_CONVERT_FORMAT = 0;
 static Uint32 SAMPLE_RATE = 48000;
 static Uint32 CHANNELS = 6;
-static Uint32 BUFFER_NSAMPLES = 10000;
+static Uint32 BUFFER_NSAMPLES = 9000;
 static Uint32 BUFFER_SIZE = BUFFER_NSAMPLES * CHANNELS * sizeof(Sample);
 static Uint32 SDL_PACKET_SIZE = 512;
 
 ///////////////////////////////////////////////////////////////////////////////
 
 struct platform_program_state {
+  SDL_Window *window;
+  HMENU menu;
   bool IsRunning;
   SDL_Event LastEvent;
 };
@@ -33,7 +39,9 @@ struct platform_audio_buffer {
   int Size;
   int ReadCursor;
   int WriteCursor;
+  int NumInactiveLoops;
   bool Full;
+  bool Active;
   SDL_AudioDeviceID DeviceID;
   platform_audio_config* AudioConfig;
 };
@@ -52,6 +60,11 @@ void SampleIntoAudioBuffer(platform_audio_buffer* AudioBuffer, Sample *samples, 
   platform_audio_config* AudioConfig = AudioBuffer->AudioConfig;
   int nchannels = AudioBuffer->AudioConfig->Channels;
 
+  if (!AudioBuffer->Active) {
+      SDL_PauseAudioDevice(AudioBuffer->DeviceID, 0);
+      AudioBuffer->Active = true;
+      AudioBuffer->NumInactiveLoops = 0;
+  }
   if (AudioBuffer->Full) {
     return;
   }
@@ -68,48 +81,39 @@ void SampleIntoAudioBuffer(platform_audio_buffer* AudioBuffer, Sample *samples, 
   if (AudioBuffer->WriteCursor == AudioBuffer->ReadCursor) {
     AudioBuffer->Full = true;
   }
+  SDL_Delay(1);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 void PlatformFillAudioDeviceBuffer(void* UserData, Uint8* DeviceBuffer, int Length) {
   platform_audio_buffer* AudioBuffer = (platform_audio_buffer*)UserData;
+  bool full = AudioBuffer->Full;
+  uint32_t rc = AudioBuffer->ReadCursor;
+  uint32_t wc = AudioBuffer->WriteCursor;
+  bool empty = (rc == wc) && !full;
+  uint32_t size = AudioBuffer->Size;
 
-  int OutLength = AudioBuffer->WriteCursor - AudioBuffer->ReadCursor;
-  if (OutLength == 0) {
-    if (AudioBuffer->Full) {
-      OutLength = AudioBuffer->Size;
-    } else {
-      return;
+  // Is the buffer empty?
+  if (empty) {
+    // Fill with zeros.
+    SDL_memset(DeviceBuffer, 0, Length);
+    if(++AudioBuffer->NumInactiveLoops > 10) {
+      SDL_PauseAudioDevice(AudioBuffer->DeviceID, 1);
+      AudioBuffer->Active = false;
     }
   }
-  if (OutLength < 0) {
-    OutLength = AudioBuffer->Size - AudioBuffer->ReadCursor + AudioBuffer->WriteCursor;
+  for (uint32_t i = 0; i < Length; ++i) {
+    if ((rc == wc) && !full) {
+      DeviceBuffer[i] = 0;
+    } else {
+      DeviceBuffer[i] = AudioBuffer->Buffer[rc];
+      rc = (rc + 1) % size;
+      full = false;
+    }
   }
-  if (OutLength < Length) {
-    int diff = Length - OutLength;
-    SDL_memset(DeviceBuffer + Length - diff, 0, diff);
-    Length = OutLength;
-  }
-
-  // Keep track of two regions. Region1 contains everything from the current
-  // PlayCursor up until, potentially, the end of the buffer. Region2 only
-  // exists if we need to circle back around. It contains all the data from the
-  // beginning of the buffer up until sufficient bytes are read to meet Length.
-  int Region1Size = Length;
-  int Region2Size = 0;
-  if (AudioBuffer->ReadCursor + Length > AudioBuffer->Size) {
-    // Handle looping back from the beginning.
-    Region1Size = AudioBuffer->Size - AudioBuffer->ReadCursor;
-    Region2Size = Length - Region1Size;
-  }
-
-  SDL_memcpy(DeviceBuffer, (AudioBuffer->Buffer + AudioBuffer->ReadCursor), Region1Size);
-  SDL_memcpy(&DeviceBuffer[Region1Size], AudioBuffer->Buffer, Region2Size);
-  if (AudioBuffer->Full && (Length != 0)) {
-    AudioBuffer->Full = false;
-  }
-  AudioBuffer->ReadCursor = (AudioBuffer->ReadCursor + Length) % AudioBuffer->Size;
+  AudioBuffer->ReadCursor = rc;
+  AudioBuffer->Full = false;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -134,14 +138,43 @@ void PlatformInitializeAudio(platform_audio_buffer* AudioBuffer) {
   }
 
   // Start playing the audio buffer
+  AudioBuffer->Active = true;
   SDL_PauseAudioDevice(AudioBuffer->DeviceID, 0);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 
 void PlatformHandleEvent(platform_program_state* ProgramState) {
-  if (ProgramState->LastEvent.type == SDL_QUIT) {
+  switch (ProgramState->LastEvent.type) {
+  case SDL_SYSWMEVENT:
+    if (ProgramState->LastEvent.syswm.msg->msg.win.msg == WM_USER + 1) {
+      if (LOWORD(ProgramState->LastEvent.syswm.msg->msg.win.lParam) == WM_LBUTTONDBLCLK) {
+	SDL_ShowWindow(ProgramState->window);
+	SDL_RestoreWindow(ProgramState->window);
+      } else if (LOWORD(ProgramState->LastEvent.syswm.msg->msg.win.lParam) == WM_RBUTTONDOWN) {
+        // Get current mouse position.
+        POINT curPoint ;
+        GetCursorPos( &curPoint ) ;
+        UINT clicked = TrackPopupMenu(ProgramState->menu,
+				      // don't send me WM_COMMAND messages about this window,
+				      // instead return the identifier of the clicked menu item
+				      TPM_RETURNCMD | TPM_NONOTIFY,
+				      curPoint.x, curPoint.y, 0,
+				      ProgramState->LastEvent.syswm.msg->msg.win.hwnd, NULL);
+        if (clicked == 3000) {
+          // quit the application.
+	  ProgramState->IsRunning = false;
+	}
+      }
+    }
+    break;
+  case SDL_QUIT:
     ProgramState->IsRunning = false;
+    break;
+  case SDL_WINDOWEVENT:
+    if (ProgramState->LastEvent.window.event == SDL_WINDOWEVENT_MINIMIZED)
+      SDL_HideWindow(ProgramState->window);
+    break;
   }
 }
 
@@ -151,6 +184,7 @@ int PlatformAudioThread(void* UserData) {
   platform_audio_thread_context* AudioThread = (platform_audio_thread_context*)UserData;
   AVFrame* frame = AudioThread->frame;
 
+  SDL_SetThreadPriority(SDL_THREAD_PRIORITY_HIGH);
   AVPacket packet;
   av_init_packet(&packet);
 
@@ -174,10 +208,13 @@ int PlatformAudioThread(void* UserData) {
 	}
       }
 
-      SDL_LockAudioDevice(AudioThread->AudioBuffer->DeviceID);
-      SampleIntoAudioBuffer(AudioThread->AudioBuffer, samples, frame->nb_samples);
-      SDL_UnlockAudioDevice(AudioThread->AudioBuffer->DeviceID);
+      if (frame->nb_samples) {
+	SDL_LockAudioDevice(AudioThread->AudioBuffer->DeviceID);
+	SampleIntoAudioBuffer(AudioThread->AudioBuffer, samples, frame->nb_samples);
+	SDL_UnlockAudioDevice(AudioThread->AudioBuffer->DeviceID);
+      }
       delete [] samples;
+      av_free_packet(&packet);
       SDL_Delay(1);
     }
 
@@ -196,6 +233,28 @@ int main(int argc, char** argv) {
     SDL_Log("Unable to initialized SDL: %s", SDL_GetError());
     return 1;
   }
+
+  platform_program_state ProgramState = {};
+  ProgramState.window = SDL_CreateWindow("USB SPDIF Player", SDL_WINDOWPOS_UNDEFINED,
+					 SDL_WINDOWPOS_UNDEFINED, 200, 200, SDL_WINDOW_HIDDEN);
+
+  SDL_SysWMinfo info;
+  SDL_VERSION(&info.version); 
+
+  NOTIFYICONDATA icon;
+  if (SDL_GetWindowWMInfo(ProgramState.window, &info)) {
+    icon.uCallbackMessage = WM_USER + 1;
+    icon.uFlags = NIF_ICON | NIF_TIP | NIF_MESSAGE;
+    icon.hIcon = LoadIcon(NULL, IDI_INFORMATION);
+    icon.cbSize = sizeof(icon);
+    icon.hWnd = info.info.win.window;
+    strcpy_s(icon.szTip, "USB SPDIF Player");
+    bool success = Shell_NotifyIcon(NIM_ADD, &icon);
+  }
+  SDL_EventState(SDL_SYSWMEVENT, SDL_ENABLE);
+
+  ProgramState.menu = CreatePopupMenu();
+  AppendMenu(ProgramState.menu, MF_STRING, 3000, TEXT("Exit"));
 
   // initialize all muxers, demuxers and protocols for libavformat
   // (does nothing if called twice during the course of one program execution)
@@ -250,29 +309,31 @@ int main(int argc, char** argv) {
   AudioBuffer.Buffer = new Uint8[AudioBuffer.Size];
   AudioBuffer.ReadCursor = 0;
   AudioBuffer.WriteCursor = 0;
+  AudioBuffer.NumInactiveLoops = 0;
   AudioBuffer.Full = false;
   AudioBuffer.AudioConfig = &AudioConfig;
   memset(AudioBuffer.Buffer, 0, AudioBuffer.Size);
 
-  platform_program_state ProgramState = {};
   ProgramState.IsRunning = true;
 
+  // Start the playback
+  PlatformInitializeAudio(&AudioBuffer);
+
+  // Start the read thread.
   platform_audio_thread_context AudioThreadContext = {};
   AudioThreadContext.AudioBuffer = &AudioBuffer;
   AudioThreadContext.ProgramState = &ProgramState;
   AudioThreadContext.format = format;
   AudioThreadContext.frame = frame;
   AudioThreadContext.codec = codec;
-  SDL_Thread* AudioThread = SDL_CreateThread(
-    PlatformAudioThread, "Audio", (void*)&AudioThreadContext
-  );
-
-  PlatformInitializeAudio(&AudioBuffer);
+  SDL_Thread* AudioThread =
+    SDL_CreateThread(PlatformAudioThread, "Audio", (void*)&AudioThreadContext);
 
   while (ProgramState.IsRunning) {
     while (SDL_PollEvent(&ProgramState.LastEvent)) {
       PlatformHandleEvent(&ProgramState);
     }
+    SDL_Delay(100);
   }
 
   SDL_WaitThread(AudioThread, NULL);

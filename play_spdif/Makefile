@@ -14,7 +14,7 @@ CC = g++
 # COMPILER_FLAGS specifies the additional compilation options we're using
 # -w suppresses all warnings
 # -Wl,-subsystem,windows gets rid of the console window
-COMPILER_FLAGS = -w -Wl,-subsystem,windows
+COMPILER_FLAGS = -w -Wl,-subsystem,windows -O3
 
 #LINKER_FLAGS specifies the libraries we're linking against
 LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2 -lavcodec -lswscale -lavdevice -lavformat -lavutil
@@ -23,5 +23,8 @@ LINKER_FLAGS = -lmingw32 -lSDL2main -lSDL2 -lavcodec -lswscale -lavdevice -lavfo
 OBJ_NAME = play_spdif
 
 # This is the target that compiles our executable
-all : $(SRCS)
+$(OBJ_NAME) : $(SRCS)
 	$(CC) $(SRCS) $(INCLUDE_PATHS) $(LIBRARY_PATHS) $(COMPILER_FLAGS) $(LINKER_FLAGS) -o $(OBJ_NAME)
+
+install : $(OBJ_NAME)
+	cp $(OBJ_NAME) ${HOME}/bin
